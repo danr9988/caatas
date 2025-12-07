@@ -1,4 +1,5 @@
 import json
+import time
 import urllib.parse
 
 import requests
@@ -10,7 +11,6 @@ CATAAS_BASE_URL = "https://cataas.com"
 
 
 def build_cataas_url(text: str) -> str:
-    """Собирает URL для получения картинки кота с текстом."""
     encoded_text = urllib.parse.quote(text)
     return f"{CATAAS_BASE_URL}/cat/says/{encoded_text}"
 
@@ -24,32 +24,48 @@ def main() -> None:
         print("Все поля обязательны для заполнения.")
         return
 
-    # 1. Собираем URL для котика с текстом
     image_url = build_cataas_url(text_for_image)
-
-    # 2. Создаем клиента Я.Диска
     yadisk_client = YandexDiskClient(token=yadisk_token)
 
-    # 3. Создаем папку с именем группы
     folder_path = group_name
+    print("Создаем папку на Я.Диске...")
     yadisk_client.create_folder(folder_path)
 
-    # 4. Задаем путь и имя файла на диске
     file_name = f"{text_for_image}.jpg"
     disk_path = f"{folder_path}/{file_name}"
 
-    # 5. Отправляем задачу на загрузку файла по URL
+    print("Запускаем загрузку файла на Я.Диск...")
     upload_info = yadisk_client.upload_file_by_url(
         disk_path=disk_path,
         file_url=image_url,
     )
+    print("Задача на загрузку отправлена, ожидаем появления файла...")
 
-    # 6. Сохраняем информацию о файле в JSON (без запроса размера)
-    result_data = {
-        "group_name": group_name,
-        "text": text_for_image,
-        "disk_path": disk_path,
-    }
+    resource_info = None
+    for attempt in range(5):
+        try:
+            resource_info = yadisk_client.get_resource_info(disk_path)
+            break
+        except RuntimeError:
+            time.sleep(1)
+
+    if resource_info is None:
+        result_data = {
+            "group_name": group_name,
+            "text": text_for_image,
+            "disk_path": disk_path,
+            "upload_info": upload_info,
+        }
+    else:
+        result_data = {
+            "group_name": group_name,
+            "text": text_for_image,
+            "disk_path": disk_path,
+            "size": resource_info.get("size"),
+            "type": resource_info.get("type"),
+            "name": resource_info.get("name"),
+            "upload_info": upload_info,
+        }
 
     with open("result.json", "w", encoding="utf-8") as json_file:
         json.dump(result_data, json_file, ensure_ascii=False, indent=4)

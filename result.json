@@ -1,5 +1,13 @@
 {
     "group_name": "PD-140",
-    "text": "Cats_2",
-    "disk_path": "PD-140/Cats_2.jpg"
+    "text": "Cats_3",
+    "disk_path": "PD-140/Cats_3.jpg",
+    "size": 20982,
+    "type": "file",
+    "name": "Cats_3.jpg",
+    "upload_info": {
+        "method": "GET",
+        "href": "https://cloud-api.yandex.net/v1/disk/operations/723f9fd02ccb95e444f41f0405c767bdb30ae5e02c31b5aecf86781ce8c17a48",
+        "templated": false
+    }
 }
